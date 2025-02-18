@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  weather-streamer:
+    build: .
+    container_name: weather_streamer
+    pull_policy: build
+    environment:
+      - KAFKA_BROKER=weather_kafka:9097  
+      - KAFKA_TOPIC=weather_raw
+    depends_on:
+      - kafka
+    ports:
+      - "8012:8012"  
+    command: uvicorn main:app --host 0.0.0.0 --port 8012
+    networks:
+      data-station-network:
+        ipv4_address: 172.20.14.84  
+
+networks:
+  data-station-network:
+    external: true
