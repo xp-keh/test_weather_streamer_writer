@@ -1,10 +1,11 @@
+import threading
 import asyncio
 from dotenv import load_dotenv 
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
 from aiokafka import AIOKafkaConsumer
 from config.utils import get_env_value
 
+# Load environment variables
 load_dotenv()
 
 kafka_broker = get_env_value('KAFKA_BROKER')
@@ -13,9 +14,9 @@ kafka_consumer_group = get_env_value('KAFKA_CONSUMER_GROUP')
 
 app = FastAPI()
 
-class KafkaSSEConsumer:
+class KafkaConsumerService:
     """
-    Kafka Consumer that continuously listens to a topic and streams data via SSE.
+    Kafka Consumer that continuously listens to a topic and processes messages.
     """
     def __init__(self, kafka_broker, topic, group_id):
         self.kafka_broker = kafka_broker
@@ -27,46 +28,37 @@ class KafkaSSEConsumer:
             group_id=self.group_id,
             auto_offset_reset="earliest"
         )
-    
+        self.loop = asyncio.new_event_loop()
+
     async def start(self):
         """Start the Kafka consumer."""
         await self.consumer.start()
+        print("Kafka consumer started...")
 
     async def stop(self):
         """Stop the Kafka consumer."""
         await self.consumer.stop()
-    
+        print("Kafka consumer stopped.")
+
     async def consume(self):
-        """Async generator to consume messages."""
+        """Continuously consume messages from Kafka."""
         try:
             async for message in self.consumer:
-                yield f"data: {message.value.decode('utf-8')}\n\n"
+                print(f"Received: {message.value.decode('utf-8')}")
         except Exception as e:
             print(f"Error in consumer: {e}")
 
-    async def run_consumer(self):
-        """Run the Kafka consumer in FastAPI's event loop."""
-        await self.start()
-        while True:
-            await asyncio.sleep(1) 
+    def run_consumer(self):
+        """Run the Kafka consumer in a background thread."""
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_until_complete(self.start())
+        self.loop.run_until_complete(self.consume())
 
-sse_consumer = KafkaSSEConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group)
+consumer_service = KafkaConsumerService(kafka_broker, kafka_consume_topic, kafka_consumer_group)
 
-@app.on_event("startup")
-async def startup_event():
-    """Start the Kafka consumer on FastAPI startup."""
-    asyncio.create_task(sse_consumer.run_consumer())
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Stop the Kafka consumer on FastAPI shutdown."""
-    await sse_consumer.stop()
+consumer_thread = threading.Thread(target=consumer_service.run_consumer, daemon=True)
+consumer_thread.start()
 
 @app.get("/ping")
 async def healthcheck():
     return {"status": "healthy"}
-
-@app.get("/stream")
-async def stream():
-    """SSE endpoint to send Kafka messages to the frontend."""
-    return StreamingResponse(sse_consumer.consume(), media_type="text/event-stream")
