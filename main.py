@@ -1,4 +1,3 @@
-import threading
 import asyncio
 from dotenv import load_dotenv 
 from fastapi import FastAPI
@@ -22,7 +21,6 @@ class KafkaSSEConsumer:
         self.kafka_broker = kafka_broker
         self.topic = topic
         self.group_id = group_id
-        self.loop = asyncio.new_event_loop()
         self.consumer = AIOKafkaConsumer(
             self.topic, 
             bootstrap_servers=self.kafka_broker, 
@@ -46,16 +44,23 @@ class KafkaSSEConsumer:
         except Exception as e:
             print(f"Error in consumer: {e}")
 
-    def run_consumer(self):
-        """Run the consumer in an event loop."""
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_until_complete(self.start())
-        self.loop.run_forever()
+    async def run_consumer(self):
+        """Run the Kafka consumer in FastAPI's event loop."""
+        await self.start()
+        while True:
+            await asyncio.sleep(1) 
 
 sse_consumer = KafkaSSEConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group)
 
-t_consumer = threading.Thread(target=sse_consumer.run_consumer, daemon=True)
-t_consumer.start()
+@app.on_event("startup")
+async def startup_event():
+    """Start the Kafka consumer on FastAPI startup."""
+    asyncio.create_task(sse_consumer.run_consumer())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop the Kafka consumer on FastAPI shutdown."""
+    await sse_consumer.stop()
 
 @app.get("/ping")
 async def healthcheck():
