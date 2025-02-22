@@ -8,8 +8,6 @@ services:
     environment:
       - KAFKA_BROKER=weather_kafka:9097
       - KAFKA_TOPIC=weather_raw
-    depends_on:
-      - kafka
     ports:
       - "8012:8012"
     command: uvicorn main:app --host 0.0.0.0 --port 8012
