@@ -5,8 +5,8 @@ from aiokafka import AIOKafkaConsumer
 
 app = FastAPI()
 
-KAFKA_BROKER = "localhost:9092"
-TOPIC = "weather_data"
+KAFKA_BROKER = "weather_kafka:9097"
+TOPIC = "weather_raw"
 
 async def kafka_consumer():
     """Async generator that consumes messages from Kafka."""
