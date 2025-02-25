@@ -12,15 +12,15 @@ engine = create_async_engine(DATABASE_URL, echo=True)
 AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 Base = declarative_base()
 
-CLICKHOUSE_HOST = "85.209.163.202"
-CLICKHOUSE_DATABASE = "ClickHouseDB_test"
+CLICKHOUSE_HOST = "data-station-clickhouse"
+CLICKHOUSE_DATABASE = "ClickHouseDB_weather"
 CLICKHOUSE_USER = "abby"
 CLICKHOUSE_PASSWORD = "SpeakLouder"
 
 try:
     clickhouse_client = clickhouse_connect.get_client(
         host=CLICKHOUSE_HOST,
-        port=8123,
+        port=9001,
         username=CLICKHOUSE_USER,
         password=CLICKHOUSE_PASSWORD,
         database=CLICKHOUSE_DATABASE
