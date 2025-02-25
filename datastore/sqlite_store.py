@@ -20,7 +20,7 @@ CLICKHOUSE_PASSWORD = "SpeakLouder"
 try:
     clickhouse_client = clickhouse_connect.get_client(
         host=CLICKHOUSE_HOST,
-        port=9001,
+        port=9000,
         username=CLICKHOUSE_USER,
         password=CLICKHOUSE_PASSWORD,
         database=CLICKHOUSE_DATABASE
