@@ -6,3 +6,4 @@ clickhouse-driver
 confluent-kafka
 apscheduler
 python-dotenv
+aiokafka
