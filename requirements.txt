@@ -7,3 +7,5 @@ confluent-kafka
 apscheduler
 python-dotenv
 aiokafka
+clickhouse-connect
+
