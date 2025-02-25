@@ -16,10 +16,10 @@ class AsyncConsumer:
             self.topic,
             bootstrap_servers=self.kafka_broker,
             group_id=self.group_id,
-            auto_offset_reset="latest",  # Start from the latest message
+            auto_offset_reset="latest",
             value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         )
-        self.queue = asyncio.Queue()  # Queue for SSE streaming
+        self.queue = asyncio.Queue()
 
     async def start(self):
         """Start the Kafka consumer."""
@@ -36,7 +36,7 @@ class AsyncConsumer:
         try:
             async for message in self.consumer:
                 self.logger.info(f" [*] Received message: {message.value}")
-                await self.queue.put(message.value)  # Add message to queue
+                await self.queue.put(message.value)
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
 

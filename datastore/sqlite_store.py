@@ -1,37 +1,139 @@
-import asyncio
-from dotenv import load_dotenv
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
-from consume.kafka import AsyncConsumer
-from config.utils import get_env_value
+import logging
+import clickhouse_connect
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import Column, Integer, Float, String, JSON
+from datetime import datetime
 
-load_dotenv()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-kafka_broker = get_env_value("KAFKA_BROKER")
-kafka_consume_topic = "weather_raw" 
-kafka_consumer_group = get_env_value("KAFKA_CONSUMER_GROUP")
+DATABASE_URL = "sqlite+aiosqlite:///./weather_temp.db"
+engine = create_async_engine(DATABASE_URL, echo=True)
+AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+Base = declarative_base()
 
-app = FastAPI()
+CLICKHOUSE_HOST = "85.209.163.202"
+CLICKHOUSE_DATABASE = "ClickHouseDB_test"
+CLICKHOUSE_USER = "abby"
+CLICKHOUSE_PASSWORD = "SpeakLouder"
 
-consumer = AsyncConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group)
+try:
+    clickhouse_client = clickhouse_connect.get_client(
+        host=CLICKHOUSE_HOST,
+        port=8123,
+        username=CLICKHOUSE_USER,
+        password=CLICKHOUSE_PASSWORD,
+        database=CLICKHOUSE_DATABASE
+    )
+    logging.info("Connected to ClickHouse successfully!")
+except Exception as e:
+    logging.error(f"Failed to connect to ClickHouse: {e}")
 
-@app.on_event("startup")
-async def startup_event():
-    """Start Kafka consumer on FastAPI startup."""
-    await consumer.start()
-    asyncio.create_task(consumer.consume())
+class WeatherData(Base):
+    __tablename__ = "weather_data"
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Stop Kafka consumer on FastAPI shutdown."""
-    await consumer.stop()
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    location = Column(String, index=True)
+    temp = Column(Float)
+    feels_like = Column(Float)
+    temp_min = Column(Float)
+    temp_max = Column(Float)
+    pressure = Column(Integer)
+    humidity = Column(Integer)
+    wind_speed = Column(Float)
+    wind_deg = Column(Integer)
+    clouds = Column(Integer)
+    timestamp = Column(Integer)
+    raw_data = Column(JSON)
 
-@app.get("/ping")
-async def healthcheck():
-    """Basic health check."""
-    return {"status": "healthy"}
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-@app.get("/stream")
-async def stream():
-    """SSE endpoint to stream Kafka messages."""
-    return StreamingResponse(consumer.get_messages(), media_type="text/event-stream")
+async def save_weather_data(session: AsyncSession, data: dict):
+    weather_entry = WeatherData(
+        location=data.get("location", "Unknown"),
+        temp=data["main"]["temp"],
+        feels_like=data["main"].get("feels_like"),
+        temp_min=data["main"].get("temp_min"),
+        temp_max=data["main"].get("temp_max"),
+        pressure=data["main"].get("pressure"),
+        humidity=data["main"].get("humidity"),
+        wind_speed=data["wind"].get("speed"),
+        wind_deg=data["wind"].get("deg"),
+        clouds=data["clouds"].get("all"),
+        timestamp=data.get("dt"),
+        raw_data=data
+    )
+    session.add(weather_entry)
+    await session.commit()
+
+async def bulk_write_to_clickhouse():
+    now = datetime.utcnow()
+    timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
+    logging.info(f"Fetching data from SQLite at {timestamp_str}")
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute("SELECT * FROM weather_data")
+        rows = result.fetchall()
+
+        if not rows:
+            logging.info("No new data to write to ClickHouse.")
+            return
+
+        table_name = f"weather_{now.strftime('%Y%m%d_%H:00:00')}"
+
+        create_table_query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            location String,
+            temp Float32,
+            feels_like Float32,
+            temp_min Float32,
+            temp_max Float32,
+            pressure Int32,
+            humidity Int32,
+            wind_speed Float32,
+            wind_deg Int32,
+            clouds Int32,
+            timestamp Int32
+        ) ENGINE = MergeTree()
+        ORDER BY timestamp
+        """
+        clickhouse_client.command(create_table_query)
+
+        data_to_insert = [
+            (
+                row.location,
+                row.temp,
+                row.feels_like,
+                row.temp_min,
+                row.temp_max,
+                row.pressure,
+                row.humidity,
+                row.wind_speed,
+                row.wind_deg,
+                row.clouds,
+                row.timestamp,
+            )
+            for row in rows
+        ]
+
+        logging.info(f"Uploading data to ClickHouse at {timestamp_str}")
+
+        insert_query = f"""
+        INSERT INTO {table_name} 
+        (location, temp, feels_like, temp_min, temp_max, pressure, humidity, wind_speed, wind_deg, clouds, timestamp)
+        VALUES
+        """
+        clickhouse_client.insert(table_name, data_to_insert, 
+                                 column_names=["location", "temp", "feels_like", "temp_min", "temp_max", 
+                                               "pressure", "humidity", "wind_speed", "wind_deg", "clouds", "timestamp"])
+
+        delete_timestamp_str = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        logging.info(f"Deleting data from SQLite at {delete_timestamp_str}")
+
+        await session.execute("DELETE FROM weather_data")
+        await session.commit()
+
+        completion_timestamp_str = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        logging.info(f"Fetch, upload, and deletion completed at {completion_timestamp_str}")
