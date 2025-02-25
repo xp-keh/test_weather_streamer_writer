@@ -30,6 +30,7 @@ except Exception as e:
     logging.error(f"Failed to connect to ClickHouse: {e}")
 
 class WeatherData(Base):
+    """SQLite Table for temporary weather data storage."""
     __tablename__ = "weather_data"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -47,10 +48,12 @@ class WeatherData(Base):
     raw_data = Column(JSON)
 
 async def init_db():
+    """Initialize SQLite database."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
 async def save_weather_data(session: AsyncSession, data: dict):
+    """Save a single Kafka message into SQLite."""
     weather_entry = WeatherData(
         location=data.get("location", "Unknown"),
         temp=data["main"]["temp"],
@@ -66,9 +69,9 @@ async def save_weather_data(session: AsyncSession, data: dict):
         raw_data=data
     )
     session.add(weather_entry)
-    await session.commit()
 
 async def bulk_write_to_clickhouse():
+    """Periodically write SQLite data to ClickHouse and clear SQLite."""
     now = datetime.now()
     timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
     logging.info(f"Fetching data from SQLite at {timestamp_str}")
@@ -101,39 +104,14 @@ async def bulk_write_to_clickhouse():
         """
         clickhouse_client.command(create_table_query)
 
-        data_to_insert = [
-            (
-                row.location,
-                row.temp,
-                row.feels_like,
-                row.temp_min,
-                row.temp_max,
-                row.pressure,
-                row.humidity,
-                row.wind_speed,
-                row.wind_deg,
-                row.clouds,
-                row.timestamp,
-            )
-            for row in rows
-        ]
+        data_to_insert = [(row.location, row.temp, row.feels_like, row.temp_min, row.temp_max,
+                           row.pressure, row.humidity, row.wind_speed, row.wind_deg, row.clouds, row.timestamp)
+                          for row in rows]
 
         logging.info(f"Uploading data to ClickHouse at {timestamp_str}")
 
-        insert_query = f"""
-        INSERT INTO {table_name} 
-        (location, temp, feels_like, temp_min, temp_max, pressure, humidity, wind_speed, wind_deg, clouds, timestamp)
-        VALUES
-        """
-        clickhouse_client.insert(table_name, data_to_insert, 
-                                 column_names=["location", "temp", "feels_like", "temp_min", "temp_max", 
-                                               "pressure", "humidity", "wind_speed", "wind_deg", "clouds", "timestamp"])
-
-        delete_timestamp_str = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        logging.info(f"Deleting data from SQLite at {delete_timestamp_str}")
+        clickhouse_client.insert(table_name, data_to_insert)
 
         await session.execute("DELETE FROM weather_data")
         await session.commit()
-
-        completion_timestamp_str = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        logging.info(f"Fetch, upload, and deletion completed at {completion_timestamp_str}")
+        logging.info(f"Data upload complete, SQLite cleared at {timestamp_str}")
