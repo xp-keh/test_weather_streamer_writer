@@ -35,7 +35,7 @@ class AsyncConsumer:
         """Continuously consume messages and put them in the queue for SSE."""
         try:
             async for message in self.consumer:
-                self.logger.info(f" [*] Received message: {message.value}")
+                self.logger.info("Received data from kafka")
                 await self.queue.put(message.value)
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")

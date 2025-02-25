@@ -69,7 +69,7 @@ async def save_weather_data(session: AsyncSession, data: dict):
     await session.commit()
 
 async def bulk_write_to_clickhouse():
-    now = datetime.utcnow()
+    now = datetime.now()
     timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
     logging.info(f"Fetching data from SQLite at {timestamp_str}")
 
