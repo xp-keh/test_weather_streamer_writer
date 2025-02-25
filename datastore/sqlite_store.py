@@ -13,7 +13,7 @@ AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_com
 Base = declarative_base()
 
 CLICKHOUSE_HOST = "data-station-clickhouse"
-CLICKHOUSE_DATABASE = "ClickHouseDB_weather"
+CLICKHOUSE_DATABASE = "weather_dev_1"
 CLICKHOUSE_USER = "abby"
 CLICKHOUSE_PASSWORD = "SpeakLouder"
 
