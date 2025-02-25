@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from consume.kafka import AsyncConsumer
 from config.utils import get_env_value
-from datastore.sqlite_store import AsyncSessionLocal, bulk_write_to_clickhouse
+from datastore.sqlite_store import init_db, bulk_write_to_clickhouse
 
 kafka_broker = get_env_value("KAFKA_BROKER")
 kafka_consume_topic = get_env_value("KAFKA_CONSUME_TOPIC")
@@ -28,6 +28,7 @@ async def stream_data():
 @app.on_event("startup")
 async def startup_event():
     """Start Kafka consumer and schedule ClickHouse uploads on FastAPI startup."""
+    await init_db() 
     await consumer.start()
     asyncio.create_task(consumer.consume()) 
 
