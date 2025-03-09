@@ -84,7 +84,7 @@ async def bulk_write_to_clickhouse():
             logging.info("No new data to write to ClickHouse.")
             return
 
-        table_name = f"weather_{now.strftime('%Y%m%d_%H:00:00')}"
+        table_name = f"weather_{now.strftime('%Y%m%d_%H%M')}"
 
         create_table_query = f"""
         CREATE TABLE IF NOT EXISTS {table_name} (
