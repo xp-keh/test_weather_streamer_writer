@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import Column, Integer, Float, String, JSON
 from datetime import datetime
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 DATABASE_URL = "sqlite+aiosqlite:///./weather_temp.db"
 engine = create_async_engine(DATABASE_URL, echo=True)
