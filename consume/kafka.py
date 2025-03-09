@@ -24,23 +24,23 @@ class AsyncConsumer:
     async def start(self):
         """Start the Kafka consumer."""
         await self.consumer.start()
-        self.logger.info(f" [*] Kafka consumer started on topic: {self.topic}")
+        # self.logger.info(f" [*] Kafka consumer started on topic: {self.topic}")
 
     async def stop(self):
         """Stop the Kafka consumer."""
         await self.consumer.stop()
-        self.logger.info(" [*] Kafka consumer stopped.")
+        # self.logger.info(" [*] Kafka consumer stopped.")
 
     async def consume(self):
         """Continuously consume messages, save them to SQLite, and put them in the queue for SSE."""
         try:
             async for message in self.consumer:
-                self.logger.info("Received data from Kafka")
+                # self.logger.info("Received data from Kafka")
 
                 async with AsyncSessionLocal() as session:
                     await save_weather_data(session, message.value)
                     await session.commit()
-                self.logger.info("Uploaded data to SQLite")
+                # self.logger.info("Uploaded data to SQLite")
 
                 await self.queue.put(f"data: {json.dumps(message.value)}\n\n")
         except Exception as e:
