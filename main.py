@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.executors.asyncio import AsyncIOExecutor
 from consume.kafka import AsyncConsumer
 from config.utils import get_env_value
 from datastore.redis_store import init_redis
@@ -18,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 app = FastAPI()
 consumer = AsyncConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group)
 
-scheduler = BackgroundScheduler()
+scheduler = BackgroundScheduler(executors={"default": AsyncIOExecutor()})
 scheduler.start()
 
 async def stream_data():
@@ -26,10 +27,9 @@ async def stream_data():
     async for message in consumer.get_messages():
         yield message
 
-def sync_bulk_write_to_clickhouse():
-    """Schedules ClickHouse bulk write without blocking the event loop."""
+async def async_bulk_write_to_clickhouse():
     loop = asyncio.get_running_loop()
-    loop.create_task(bulk_write_to_clickhouse())
+    await loop.create_task(bulk_write_to_clickhouse())
 
 @app.on_event("startup")
 async def startup_event():
@@ -38,8 +38,9 @@ async def startup_event():
     await consumer.start()
     asyncio.create_task(consumer.consume()) 
 
+    loop = asyncio.get_running_loop()
     scheduler.add_job(
-        sync_bulk_write_to_clickhouse,
+        lambda: loop.create_task(async_bulk_write_to_clickhouse()),
         trigger=IntervalTrigger(minutes=1),
         id="clickhouse_upload",
         replace_existing=True
