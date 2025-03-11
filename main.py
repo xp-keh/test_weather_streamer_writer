@@ -28,8 +28,9 @@ async def stream_data():
         yield message
 
 def sync_bulk_write_to_clickhouse():
-    """Sync wrapper to run bulk_write_to_clickhouse in an async loop."""
-    run(bulk_write_to_clickhouse())
+    """Schedules ClickHouse bulk write without blocking the event loop."""
+    loop = asyncio.get_running_loop()
+    loop.create_task(bulk_write_to_clickhouse())
 
 @app.on_event("startup")
 async def startup_event():
