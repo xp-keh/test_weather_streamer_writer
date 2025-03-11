@@ -1,4 +1,11 @@
 fastapi
 uvicorn
-aiokafka
+sqlalchemy[asyncio]
+aioredis
+clickhouse-driver
+confluent-kafka
+apscheduler
 python-dotenv
+aiokafka
+clickhouse-connect
+
