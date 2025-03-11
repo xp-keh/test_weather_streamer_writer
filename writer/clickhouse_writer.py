@@ -1,6 +1,6 @@
 import logging
 import clickhouse_connect
-from datetime import datetime
+from datetime import datetime, timezone
 from config.utils import get_env_value
 from datastore.redis_store import get_all_weather_data, clear_redis
 
@@ -61,7 +61,8 @@ async def bulk_write_to_clickhouse():
         for row in data
     ]
 
-    logging.info(f"Uploading {len(data)} records to ClickHouse...")
+    utc_now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S GMT+0")
+    logging.info(f"Uploading {len(data)} records to ClickHouse at {utc_now}")
 
     insert_query = f"""
     INSERT INTO {table_name} (location, temp, feels_like, temp_min, temp_max, pressure, humidity, 
@@ -73,5 +74,4 @@ async def bulk_write_to_clickhouse():
     await clear_redis()  
     logging.info(f"Uploaded {len(data)} records to ClickHouse and cleared Redis.")
 
-    # Close connection explicitly
     clickhouse_client.close()

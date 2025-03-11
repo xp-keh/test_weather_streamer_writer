@@ -57,7 +57,7 @@ class AsyncConsumer:
                 key = f"weather:{weather_data['timestamp']}"
                 await save_weather_data(key, weather_data)
 
-                logging.info(f"Saved data to Redis: {key} -> {weather_data}")
+                # logging.info(f"Saved data to Redis: {key} -> {weather_data}")
 
                 await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
 
