@@ -35,7 +35,6 @@ def sync_bulk_write_to_clickhouse():
 async def startup_event():
     """Start Kafka consumer and schedule ClickHouse uploads on FastAPI startup."""
     await init_redis()
-    init_clickhouse()
     await consumer.start()
     asyncio.create_task(consumer.consume()) 
 
