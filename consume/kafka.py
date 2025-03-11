@@ -36,14 +36,32 @@ class AsyncConsumer:
         """Continuously consume messages, save them to Redis, and put them in the queue for SSE."""
         try:
             async for message in self.consumer:
-                data = message.value
-                logging.info(f"Received Kafka message: {data}") 
+                raw_data = message.value  # Original Kafka message
 
-                key = f"weather:{message.timestamp}"
-                await save_weather_data(key, message.value)
-                logging.info(f"Saved data to Redis: {key}")
+                logging.info(f"Received Kafka message: {raw_data}")  # Debugging
 
-                await self.queue.put(f"data: {json.dumps(message.value)}\n\n")
+                # Extracting and flattening necessary fields
+                weather_data = {
+                    "location": raw_data.get("location", "unknown"),
+                    "temp": raw_data.get("main", {}).get("temp", 0.0),
+                    "feels_like": raw_data.get("main", {}).get("feels_like", 0.0),
+                    "temp_min": raw_data.get("main", {}).get("temp_min", 0.0),
+                    "temp_max": raw_data.get("main", {}).get("temp_max", 0.0),
+                    "pressure": raw_data.get("main", {}).get("pressure", 0),
+                    "humidity": raw_data.get("main", {}).get("humidity", 0),
+                    "wind_speed": raw_data.get("wind", {}).get("speed", 0.0),
+                    "wind_deg": raw_data.get("wind", {}).get("deg", 0),
+                    "clouds": raw_data.get("clouds", {}).get("all", 0),
+                    "timestamp": raw_data.get("dt", 0)
+                }
+
+                key = f"weather:{weather_data['timestamp']}"
+                await save_weather_data(key, weather_data)
+
+                logging.info(f"Saved data to Redis: {key} -> {weather_data}")
+
+                await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
+
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
 
