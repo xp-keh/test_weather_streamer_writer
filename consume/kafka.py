@@ -36,7 +36,7 @@ class AsyncConsumer:
         """Continuously consume messages, save them to Redis, and put them in the queue for SSE."""
         try:
             async for message in self.consumer:
-                data = json.loads(message.value)
+                data = message.value
                 logging.info(f"Received Kafka message: {data}") 
 
                 key = f"weather:{message.timestamp}"
