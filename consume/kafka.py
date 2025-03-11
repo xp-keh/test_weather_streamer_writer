@@ -36,11 +36,10 @@ class AsyncConsumer:
         """Continuously consume messages, save them to Redis, and put them in the queue for SSE."""
         try:
             async for message in self.consumer:
-                raw_data = message.value  # Original Kafka message
+                raw_data = message.value
 
-                logging.info(f"Received Kafka message: {raw_data}")  # Debugging
+                # logging.info(f"Received Kafka message: {raw_data}")
 
-                # Extracting and flattening necessary fields
                 weather_data = {
                     "location": raw_data.get("location", "unknown"),
                     "temp": raw_data.get("main", {}).get("temp", 0.0),
