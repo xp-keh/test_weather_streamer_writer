@@ -69,7 +69,7 @@ async def bulk_write_to_clickhouse():
                               wind_speed, wind_deg, clouds, timestamp)
     VALUES
     """
-    clickhouse_client.insert(insert_query, data_to_insert)
+    clickhouse_client.insert(table_name, data_to_insert)
 
     await clear_redis()  
     logging.info(f"Uploaded {len(data)} records to ClickHouse and cleared Redis.")
