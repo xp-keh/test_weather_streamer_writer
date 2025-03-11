@@ -54,7 +54,7 @@ class AsyncConsumer:
                     "timestamp": raw_data.get("dt", 0)
                 }
 
-                key = f"weather:{weather_data['timestamp']}"
+                key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
                 await save_weather_data(key, weather_data)
 
                 # logging.info(f"Saved data to Redis: {key} -> {weather_data}")

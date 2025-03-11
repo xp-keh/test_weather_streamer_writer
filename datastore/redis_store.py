@@ -27,7 +27,9 @@ async def get_all_weather_data():
         await init_redis()
     else: 
         keys = await redis_client.keys("weather:*")
-        return [json.loads(await redis_client.get(key)) for key in keys]
+        data = [json.loads(await redis_client.get(key)) for key in keys]
+        logging.info(f"Fetched {len(data)} records from Redis.")
+        return data
 
 async def clear_redis():
     if redis_client is None: 
