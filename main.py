@@ -45,7 +45,6 @@ async def startup_event():
         id="clickhouse_upload",
         replace_existing=True
     )
-    scheduler.start()
 
     logging.info("Scheduled ClickHouse upload job every 1 minute.")
 
