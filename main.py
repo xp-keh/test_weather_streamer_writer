@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 # from apscheduler.schedulers.background import BackgroundScheduler
@@ -63,3 +64,11 @@ async def shutdown_event():
 async def healthcheck():
     """Basic health check"""
     return {"status": "healthy"}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],  
+    allow_headers=["*"], 
+)
