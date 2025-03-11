@@ -6,33 +6,36 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from consume.kafka import AsyncConsumer
 from config.utils import get_env_value
-from datastore.sqlite_store import init_db, bulk_write_to_clickhouse
+from datastore.redis_store import init_redis
+from writer.clickhouse_writer import init_clickhouse, bulk_write_to_clickhouse
 from asyncio import run
 
 kafka_broker = get_env_value("KAFKA_BROKER")
 kafka_consume_topic = get_env_value("KAFKA_CONSUME_TOPIC")
 kafka_consumer_group = get_env_value("KAFKA_CONSUMER_GROUP")
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 app = FastAPI()
 consumer = AsyncConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group)
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 scheduler = BackgroundScheduler()
 scheduler.start()
 
 async def stream_data():
-    """SSE streaming from Kafka (data already saved in SQLite)."""
+    """SSE streaming from Kafka (data already saved in Redis)."""
     async for message in consumer.get_messages():
         yield message
 
 def sync_bulk_write_to_clickhouse():
+    """Sync wrapper to run bulk_write_to_clickhouse in an async loop."""
     run(bulk_write_to_clickhouse())
 
 @app.on_event("startup")
 async def startup_event():
     """Start Kafka consumer and schedule ClickHouse uploads on FastAPI startup."""
-    await init_db() 
+    await init_redis()
+    init_clickhouse()
     await consumer.start()
     asyncio.create_task(consumer.consume()) 
 
@@ -44,18 +47,18 @@ async def startup_event():
     )
     logging.info("Scheduled ClickHouse upload job every 1 minute.")
 
+@app.get("/stream")
+async def stream():
+    """SSE endpoint to stream Kafka messages"""
+    return StreamingResponse(stream_data(), media_type="text/event-stream")
+
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Stop Kafka consumer and scheduler on FastAPI shutdown."""
+    """Stop Kafka consumer and scheduler on FastAPI shutdown"""
     await consumer.stop()
     scheduler.shutdown()
 
 @app.get("/ping")
 async def healthcheck():
-    """Basic health check."""
+    """Basic health check"""
     return {"status": "healthy"}
-
-@app.get("/stream")
-async def stream():
-    """SSE endpoint to stream Kafka messages (data from SQLite)."""
-    return StreamingResponse(stream_data(), media_type="text/event-stream")

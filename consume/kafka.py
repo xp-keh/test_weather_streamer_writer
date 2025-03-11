@@ -2,10 +2,10 @@ import asyncio
 import json
 from aiokafka import AIOKafkaConsumer
 from config.logging import Logger
-from datastore.sqlite_store import AsyncSessionLocal, save_weather_data
+from datastore.redis_store import save_weather_data
 
 class AsyncConsumer:
-    """Kafka Consumer that listens to a topic, saves data, and streams via SSE."""
+    """Kafka Consumer that listens to a topic, saves data to Redis, and streams via SSE."""
     
     def __init__(self, kafka_broker, topic, group_id):
         self.kafka_broker = kafka_broker
@@ -24,24 +24,21 @@ class AsyncConsumer:
     async def start(self):
         """Start the Kafka consumer."""
         await self.consumer.start()
-        # self.logger.info(f" [*] Kafka consumer started on topic: {self.topic}")
 
     async def stop(self):
         """Stop the Kafka consumer."""
         await self.consumer.stop()
-        # self.logger.info(" [*] Kafka consumer stopped.")
 
     async def consume(self):
-        """Continuously consume messages, save them to SQLite, and put them in the queue for SSE."""
+        """Continuously consume messages, save them to Redis, and put them in the queue for SSE."""
         try:
             async for message in self.consumer:
-                # self.logger.info("Received data from Kafka")
+                key = f"weather:{message.timestamp}"
 
-                async with AsyncSessionLocal() as session:
-                    await save_weather_data(session, message.value)
-                    await session.commit()
-                # self.logger.info("Uploaded data to SQLite")
+                # Save to Redis instead of SQLite
+                await save_weather_data(key, message.value)
 
+                # Stream to SSE
                 await self.queue.put(f"data: {json.dumps(message.value)}\n\n")
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
