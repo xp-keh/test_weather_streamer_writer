@@ -8,7 +8,6 @@ from consume.kafka import AsyncConsumer
 from config.utils import get_env_value
 from datastore.redis_store import init_redis
 from writer.clickhouse_writer import bulk_write_to_clickhouse
-from asyncio import run
 
 kafka_broker = get_env_value("KAFKA_BROKER")
 kafka_consume_topic = get_env_value("KAFKA_CONSUME_TOPIC")
