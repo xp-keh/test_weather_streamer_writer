@@ -38,7 +38,7 @@ class AsyncConsumer:
             async for message in self.consumer:
                 raw_data = message.value
 
-                # logging.info(f"Received Kafka message: {raw_data}")
+                logging.info(f"[Kafka] Consumed message with timestamp: {raw_data.get('dt', 'N/A')}")
 
                 weather_data = {
                     "location": raw_data.get("location", "unknown"),
@@ -55,9 +55,12 @@ class AsyncConsumer:
                 }
 
                 key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
+
+                logging.info(f"[Redis] Saving data with timestamp: {weather_data['timestamp']} -> {key}")
+
                 await save_weather_data(key, weather_data)
 
-                # logging.info(f"Saved data to Redis: {key} -> {weather_data}")
+                logging.info(f"[Stream] Streaming data with timestamp: {weather_data['timestamp']}")
 
                 await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
 
