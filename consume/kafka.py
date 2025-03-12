@@ -64,6 +64,8 @@ class AsyncConsumer:
 
                 await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
 
+                await self.consumer.commit()
+
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
 
