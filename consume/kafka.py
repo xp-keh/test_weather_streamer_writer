@@ -51,7 +51,7 @@ class AsyncConsumer:
                     "wind_speed": raw_data.get("wind", {}).get("speed", 0.0),
                     "wind_deg": raw_data.get("wind", {}).get("deg", 0),
                     "clouds": raw_data.get("clouds", {}).get("all", 0),
-                    "timestamp": raw_data.get("raw_produce_dt", 0)
+                    "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10])
                 }
 
                 key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
