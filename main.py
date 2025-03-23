@@ -2,7 +2,7 @@ import asyncio
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+# from fastapi.responses import StreamingResponse
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from consume.kafka import AsyncConsumer
@@ -22,10 +22,10 @@ consumer = AsyncConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group
 scheduler = AsyncIOScheduler()
 scheduler.start()
 
-async def stream_data():
-    """SSE streaming from Kafka (data already saved in Redis)."""
-    async for message in consumer.get_messages():
-        yield message
+# async def stream_data():
+#     """SSE streaming from Kafka (data already saved in Redis)."""
+#     async for message in consumer.get_messages():
+#         yield message
 
 async def async_bulk_write_to_clickhouse():
     """Async function to bulk write to ClickHouse."""
@@ -47,10 +47,10 @@ async def startup_event():
 
     logging.info("Scheduled ClickHouse upload job every 1 minute.")
 
-@app.get("/stream")
-async def stream():
-    """SSE endpoint to stream Kafka messages"""
-    return StreamingResponse(stream_data(), media_type="text/event-stream")
+# @app.get("/stream")
+# async def stream():
+#     """SSE endpoint to stream Kafka messages"""
+#     return StreamingResponse(stream_data(), media_type="text/event-stream")
 
 @app.on_event("shutdown")
 async def shutdown_event():
