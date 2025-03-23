@@ -34,5 +34,9 @@ async def get_all_weather_data():
 async def clear_redis():
     if redis_client is None: 
         await init_redis()
-    else: 
+    
+    try:
         await redis_client.flushdb()
+        logging.info("✅ Redis flush successful.")
+    except Exception as e:
+        logging.error(f"❌ Redis flush failed: {e}")
