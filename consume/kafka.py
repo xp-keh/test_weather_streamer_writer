@@ -1,16 +1,17 @@
-import asyncio
 import json
 import logging
 from aiokafka import AIOKafkaConsumer
 from config.logging import Logger
 from datastore.redis_store import save_weather_data
+# import asyncio
+from consume.websocket_manager import WebSocketManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class AsyncConsumer:
     """Kafka Consumer that listens to a topic, saves data to Redis, and streams via SSE."""
     
-    def __init__(self, kafka_broker, topic, group_id):
+    def __init__(self, kafka_broker, topic, group_id, websocket_manager: WebSocketManager):
         self.kafka_broker = kafka_broker
         self.topic = topic
         self.group_id = group_id
@@ -23,6 +24,7 @@ class AsyncConsumer:
             value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         )
         # self.queue = asyncio.Queue()
+        self.websocket_manager = websocket_manager
 
     async def start(self):
         """Start the Kafka consumer."""
@@ -60,9 +62,10 @@ class AsyncConsumer:
 
                 await save_weather_data(key, weather_data)
 
-                # logging.info(f"[Stream] Streaming data with timestamp: {weather_data['timestamp']}")
+                logging.info(f"[Stream] Streaming data with timestamp: {weather_data['timestamp']}")
 
                 # await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
+                await self.websocket_manager.broadcast(json.dumps(weather_data))
 
                 await self.consumer.commit()
 

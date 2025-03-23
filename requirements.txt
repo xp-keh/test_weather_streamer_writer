@@ -8,4 +8,6 @@ apscheduler
 python-dotenv
 aiokafka
 clickhouse-connect
-
+websockets
+orjson
+uvloop
