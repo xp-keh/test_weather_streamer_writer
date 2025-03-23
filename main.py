@@ -32,6 +32,8 @@ scheduler.start()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time streaming."""
+    await websocket.accept()
+    await websocket.send_text("Connected to WebSocket")
     await websocket_manager.connect(websocket)
     try:
         while True:
