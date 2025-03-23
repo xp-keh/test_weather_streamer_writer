@@ -22,7 +22,7 @@ class AsyncConsumer:
             auto_offset_reset="latest",
             value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         )
-        self.queue = asyncio.Queue()
+        # self.queue = asyncio.Queue()
 
     async def start(self):
         """Start the Kafka consumer."""
@@ -60,17 +60,17 @@ class AsyncConsumer:
 
                 await save_weather_data(key, weather_data)
 
-                logging.info(f"[Stream] Streaming data with timestamp: {weather_data['timestamp']}")
+                # logging.info(f"[Stream] Streaming data with timestamp: {weather_data['timestamp']}")
 
-                await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
+                # await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
 
                 await self.consumer.commit()
 
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
 
-    async def get_messages(self):
-        """Async generator to retrieve messages from the queue."""
-        while True:
-            msg = await self.queue.get()
-            yield msg
+    # async def get_messages(self):
+    #     """Async generator to retrieve messages from the queue."""
+    #     while True:
+    #         msg = await self.queue.get()
+    #         yield msg
