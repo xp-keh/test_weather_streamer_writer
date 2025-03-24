@@ -3,7 +3,6 @@ import logging
 from aiokafka import AIOKafkaConsumer
 from config.logging import Logger
 from datastore.redis_store import save_weather_data
-# import asyncio
 from consume.websocket_manager import WebSocketManager
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -23,7 +22,6 @@ class AsyncConsumer:
             auto_offset_reset="latest",
             value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         )
-        # self.queue = asyncio.Queue()
         self.websocket_manager = websocket_manager
 
     async def start(self):
@@ -39,8 +37,6 @@ class AsyncConsumer:
         try:
             async for message in self.consumer:
                 raw_data = message.value
-
-                # logging.info(f"[Kafka] Consumed message with timestamp: {raw_data.get('dt', 'N/A')}")
 
                 weather_data = {
                     "location": raw_data.get("location", "unknown"),
@@ -58,22 +54,11 @@ class AsyncConsumer:
 
                 key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
 
-                # logging.info(f"[Redis] Saving data with timestamp: {weather_data['timestamp']} -> {key}")
-
                 await save_weather_data(key, weather_data)
 
-                # logging.info(f"[Stream] Streaming data using Websocket with timestamp: {weather_data['timestamp']}")
-
-                # await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
                 await self.websocket_manager.broadcast(json.dumps(weather_data))
 
                 await self.consumer.commit()
 
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
-
-    # async def get_messages(self):
-    #     """Async generator to retrieve messages from the queue."""
-    #     while True:
-    #         msg = await self.queue.get()
-    #         yield msg
