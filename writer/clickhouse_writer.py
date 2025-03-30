@@ -55,9 +55,18 @@ async def bulk_write_to_clickhouse():
 
     data_to_insert = [
         (
-            row["location"], row["temp"], row["feels_like"], row["temp_min"],
-            row["temp_max"], row["pressure"], row["humidity"], row["wind_speed"],
-            row["wind_deg"], row["clouds"], row["timestamp"], row["dt"]
+            row["location"],
+            row.get("temp", 0.0), 
+            row.get("feels_like", 0.0),
+            row.get("temp_min", 0.0),
+            row.get("temp_max", 0.0),
+            row.get("pressure", 0), 
+            row.get("humidity", 0),
+            row.get("wind_speed", 0.0),
+            row.get("wind_deg", 0),
+            row.get("clouds", 0),
+            row.get("timestamp", 0),
+            row.get("dt", 0),
         )
         for row in data
     ]
