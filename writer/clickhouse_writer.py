@@ -46,7 +46,8 @@ async def bulk_write_to_clickhouse():
         wind_speed Float32,
         wind_deg Int32,
         clouds Int32,
-        timestamp Int32
+        timestamp Int32,
+        dt Int32
     ) ENGINE = MergeTree()
     ORDER BY timestamp
     """
@@ -56,7 +57,7 @@ async def bulk_write_to_clickhouse():
         (
             row["location"], row["temp"], row["feels_like"], row["temp_min"],
             row["temp_max"], row["pressure"], row["humidity"], row["wind_speed"],
-            row["wind_deg"], row["clouds"], row["timestamp"]
+            row["wind_deg"], row["clouds"], row["timestamp"], row["dt"]
         )
         for row in data
     ]
