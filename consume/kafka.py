@@ -46,10 +46,11 @@ class AsyncConsumer:
                     "humidity": raw_data.get("main", {}).get("humidity", 0),
                     "wind_speed": raw_data.get("wind", {}).get("speed", 0.0),
                     "wind_deg": raw_data.get("wind", {}).get("deg", 0),
-                    "wind_gust": raw_data.get("wind", {}).get("gust", 0.0),  # Added wind gust
+                    "wind_gust": raw_data.get("wind", {}).get("gust", 0.0),  
                     "clouds": raw_data.get("clouds", {}).get("all", 0),
-                    "description": raw_data.get("weather", [{}])[0].get("description", "unknown"),  # Added description
-                    "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10])
+                    "description": raw_data.get("weather", [{}])[0].get("description", "unknown"),
+                    "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10]),
+                    "dt": int(str(raw_data.get("dt", 0))[:10])
                 }
 
                 key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
