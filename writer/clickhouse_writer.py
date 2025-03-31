@@ -45,6 +45,7 @@ async def bulk_write_to_clickhouse():
         humidity Int32,
         wind_speed Float32,
         wind_deg Int32,
+        wind_gust Int32,
         clouds Int32,
         timestamp Int32,
         dt Int32
@@ -64,6 +65,7 @@ async def bulk_write_to_clickhouse():
             row.get("humidity", 0),
             row.get("wind_speed", 0.0),
             row.get("wind_deg", 0),
+            row.get("wind_gust", 0),
             row.get("clouds", 0),
             row.get("timestamp", 0),
             row.get("dt", 0),
