@@ -2,6 +2,9 @@ import aioredis
 import logging
 import json
 from config.utils import get_env_value
+import logging
+
+logger = logging.getLogger("redis_store")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -19,8 +22,11 @@ async def init_redis():
 async def save_weather_data(key: str, data: dict):
     if redis_client is None:
         await init_redis()
-    else: 
-        await redis_client.setex(key, REDIS_TTL, json.dumps(data))
+    try:
+        await redis_client.setex(key, REDIS_TTL, json.dumps(data)) # type: ignore
+        logger.info(f"Successfully saved data to Redis: {key} -> {data}")
+    except Exception as e:
+        logger.error(f"Failed to save data to Redis: {e}")
 
 async def get_all_weather_data():
     if redis_client is None:
@@ -36,7 +42,7 @@ async def clear_redis():
         await init_redis()
     
     try:
-        await redis_client.flushdb()
+        await redis_client.flushdb() # type: ignore
         logging.info("✅ Redis flush successful.")
     except Exception as e:
         logging.error(f"❌ Redis flush failed: {e}")
