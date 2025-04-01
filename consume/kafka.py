@@ -4,6 +4,8 @@ from aiokafka import AIOKafkaConsumer
 from config.logging import Logger
 from datastore.redis_store import save_weather_data
 from consume.websocket_manager import WebSocketManager
+import traceback
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -63,3 +65,4 @@ class AsyncConsumer:
 
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
+            self.logger.error(traceback.format_exc())
