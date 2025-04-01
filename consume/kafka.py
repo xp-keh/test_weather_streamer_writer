@@ -5,7 +5,7 @@ from config.logging import Logger
 from datastore.redis_store import save_weather_data
 from consume.websocket_manager import WebSocketManager
 import traceback
-
+from starlette.websockets import WebSocketDisconnect
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -59,10 +59,16 @@ class AsyncConsumer:
 
                 await save_weather_data(key, weather_data)
 
-                await self.websocket_manager.broadcast(json.dumps(weather_data))
+                try:
+                    await self.websocket_manager.broadcast(json.dumps(weather_data))
+                except WebSocketDisconnect:
+                    self.logger.warning("WebSocket disconnected. Skipping message broadcast.")
 
-                await self.consumer.commit()
-
+                try:
+                    await self.consumer.commit()
+                except Exception as e:
+                    self.logger.error(f"Error committing Kafka offset: {e}")
+                    
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
             self.logger.error(traceback.format_exc())
