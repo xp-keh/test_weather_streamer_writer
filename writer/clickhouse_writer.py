@@ -12,7 +12,6 @@ CLICKHOUSE_USER = get_env_value("CLICKHOUSE_USER")
 CLICKHOUSE_PASSWORD = get_env_value("CLICKHOUSE_PASSWORD")
 
 async def bulk_write_to_clickhouse():
-    """Fetch all weather data from Redis and bulk write it to ClickHouse."""
     try:
         clickhouse_client = clickhouse_connect.get_client(
             host=CLICKHOUSE_HOST,

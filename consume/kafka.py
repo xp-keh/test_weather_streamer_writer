@@ -10,8 +10,6 @@ from starlette.websockets import WebSocketDisconnect
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class AsyncConsumer:
-    """Kafka Consumer that listens to a topic, saves data to Redis, and streams via SSE."""
-    
     def __init__(self, kafka_broker, topic, group_id, websocket_manager: WebSocketManager):
         self.kafka_broker = kafka_broker
         self.topic = topic
@@ -27,11 +25,9 @@ class AsyncConsumer:
         self.websocket_manager = websocket_manager
 
     async def start(self):
-        """Start the Kafka consumer."""
         await self.consumer.start()
 
     async def stop(self):
-        """Stop the Kafka consumer."""
         await self.consumer.stop()
 
     async def consume(self):

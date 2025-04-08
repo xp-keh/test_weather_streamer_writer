@@ -24,7 +24,6 @@ async def save_weather_data(key: str, data: dict):
         await init_redis()
     try:
         await redis_client.setex(key, REDIS_TTL, json.dumps(data)) # type: ignore
-        # logger.info(f"Successfully saved data to Redis: {key} -> {data}")
     except Exception as e:
         logger.error(f"Failed to save data to Redis: {e}")
 
