@@ -48,6 +48,8 @@ class AsyncConsumer:
                     "clouds": raw_data.get("clouds", {}).get("all", 0),
                     "description": raw_data.get("weather", [{}])[0].get("description", "unknown"),
                     "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10]),
+                    "lat": raw_data.get("lat", "unknown"),
+                    "lon": raw_data.get("lon", "unknown"),
                     "dt": int(str(raw_data.get("dt", 0))[:10])
                 }
 

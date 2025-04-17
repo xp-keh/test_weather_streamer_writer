@@ -1,5 +1,6 @@
 import logging
 import clickhouse_connect
+import pytz
 from datetime import datetime, timezone
 from config.utils import get_env_value
 from datastore.redis_store import get_all_weather_data, clear_redis
@@ -10,6 +11,22 @@ CLICKHOUSE_HOST = get_env_value("CLICKHOUSE_HOST")
 CLICKHOUSE_DATABASE = get_env_value("CLICKHOUSE_DATABASE")
 CLICKHOUSE_USER = get_env_value("CLICKHOUSE_USER")
 CLICKHOUSE_PASSWORD = get_env_value("CLICKHOUSE_PASSWORD")
+
+gmt7 = pytz.timezone("Asia/Jakarta")
+
+def format_unix_to_gmt7_string(unix_ts):
+    try:
+        dt_utc = datetime.utcfromtimestamp(unix_ts)
+        dt_gmt7 = dt_utc.replace(tzinfo=pytz.utc).astimezone(gmt7)
+        return dt_gmt7.strftime("%d-%m-%YT%H:%M:%S")
+    except Exception:
+        return ""
+    
+def safe_float(val: str) -> float:
+    try:
+        return float(val.replace(",", "."))
+    except (ValueError, AttributeError):
+        return 0.0 
 
 async def bulk_write_to_clickhouse():
     try:
@@ -36,6 +53,8 @@ async def bulk_write_to_clickhouse():
     create_table_query = f"""
     CREATE TABLE IF NOT EXISTS {table_name} (
         location String,
+        lat Float64,
+        lon Float64,
         temp Float32,
         feels_like Float32,
         temp_min Float32,
@@ -47,7 +66,8 @@ async def bulk_write_to_clickhouse():
         wind_gust Float32,
         clouds Int32,
         timestamp Int32,
-        dt Int32
+        dt Int32,
+        dt_format String
     ) ENGINE = MergeTree()
     ORDER BY timestamp
     """
@@ -56,6 +76,8 @@ async def bulk_write_to_clickhouse():
     data_to_insert = [
         (
             row["location"],
+            safe_float(row.get("lat", 0.0)),
+            safe_float(row.get("lon", 0.0)),
             row.get("temp", 0.0), 
             row.get("feels_like", 0.0),
             row.get("temp_min", 0.0),
@@ -68,6 +90,7 @@ async def bulk_write_to_clickhouse():
             row.get("clouds", 0),
             row.get("timestamp", 0),
             row.get("dt", 0),
+            format_unix_to_gmt7_string(row.get("dt", 0)),
         )
         for row in data
     ]
