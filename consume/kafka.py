@@ -1,16 +1,16 @@
-import asyncio
 import json
 import logging
 from aiokafka import AIOKafkaConsumer
 from config.logging import Logger
 from datastore.redis_store import save_weather_data
+from consume.websocket_manager import WebSocketManager
+import traceback
+from starlette.websockets import WebSocketDisconnect
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 class AsyncConsumer:
-    """Kafka Consumer that listens to a topic, saves data to Redis, and streams via SSE."""
-    
-    def __init__(self, kafka_broker, topic, group_id):
+    def __init__(self, kafka_broker, topic, group_id, websocket_manager: WebSocketManager):
         self.kafka_broker = kafka_broker
         self.topic = topic
         self.group_id = group_id
@@ -22,14 +22,12 @@ class AsyncConsumer:
             auto_offset_reset="latest",
             value_deserializer=lambda m: json.loads(m.decode("utf-8")),
         )
-        self.queue = asyncio.Queue()
+        self.websocket_manager = websocket_manager
 
     async def start(self):
-        """Start the Kafka consumer."""
         await self.consumer.start()
 
     async def stop(self):
-        """Stop the Kafka consumer."""
         await self.consumer.stop()
 
     async def consume(self):
@@ -38,39 +36,37 @@ class AsyncConsumer:
             async for message in self.consumer:
                 raw_data = message.value
 
-                logging.info(f"[Kafka] Consumed message with timestamp: {raw_data.get('dt', 'N/A')}")
-
                 weather_data = {
                     "location": raw_data.get("location", "unknown"),
                     "temp": raw_data.get("main", {}).get("temp", 0.0),
                     "feels_like": raw_data.get("main", {}).get("feels_like", 0.0),
-                    "temp_min": raw_data.get("main", {}).get("temp_min", 0.0),
-                    "temp_max": raw_data.get("main", {}).get("temp_max", 0.0),
                     "pressure": raw_data.get("main", {}).get("pressure", 0),
                     "humidity": raw_data.get("main", {}).get("humidity", 0),
                     "wind_speed": raw_data.get("wind", {}).get("speed", 0.0),
                     "wind_deg": raw_data.get("wind", {}).get("deg", 0),
+                    "wind_gust": raw_data.get("wind", {}).get("gust", 0.0),  
                     "clouds": raw_data.get("clouds", {}).get("all", 0),
-                    "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10])
+                    "description": raw_data.get("weather", [{}])[0].get("description", "unknown"),
+                    "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10]),
+                    "lat": raw_data.get("lat", "unknown"),
+                    "lon": raw_data.get("lon", "unknown"),
+                    "dt": int(str(raw_data.get("dt", 0))[:10])
                 }
 
                 key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
 
-                logging.info(f"[Redis] Saving data with timestamp: {weather_data['timestamp']} -> {key}")
-
                 await save_weather_data(key, weather_data)
 
-                logging.info(f"[Stream] Streaming data with timestamp: {weather_data['timestamp']}")
+                try:
+                    await self.websocket_manager.broadcast(json.dumps(weather_data))
+                except WebSocketDisconnect:
+                    self.logger.warning("WebSocket disconnected. Skipping message broadcast.")
 
-                await self.queue.put(f"data: {json.dumps(weather_data)}\n\n")
-
-                await self.consumer.commit()
-
+                try:
+                    await self.consumer.commit()
+                except Exception as e:
+                    self.logger.error(f"Error committing Kafka offset: {e}")
+                    
         except Exception as e:
             self.logger.error(f" [x] Error in consumer: {e}")
-
-    async def get_messages(self):
-        """Async generator to retrieve messages from the queue."""
-        while True:
-            msg = await self.queue.get()
-            yield msg
+            self.logger.error(traceback.format_exc())

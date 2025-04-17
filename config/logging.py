@@ -10,9 +10,6 @@ class Logger:
         self._logger: Optional[logging.Logger] = None
 
     def setup_logger(self, service_name: str = 'default', log_level: str = 'DEBUG') -> logging.Logger:
-        """
-        Setup logger with defined configurations.
-        """
         if self._logger is not None:
             raise RuntimeError('Logger is already setup.')
         self._logger = logging.getLogger(__name__)

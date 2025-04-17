@@ -1,8 +1,8 @@
 import asyncio
 import logging
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, WebSocket
+from consume.websocket_manager import WebSocketManager
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from consume.kafka import AsyncConsumer
@@ -17,15 +17,24 @@ kafka_consumer_group = get_env_value("KAFKA_CONSUMER_GROUP")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 app = FastAPI()
-consumer = AsyncConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group)
+websocket_manager = WebSocketManager()
+consumer = AsyncConsumer(kafka_broker, kafka_consume_topic, kafka_consumer_group, websocket_manager)
 
 scheduler = AsyncIOScheduler()
 scheduler.start()
 
-async def stream_data():
-    """SSE streaming from Kafka (data already saved in Redis)."""
-    async for message in consumer.get_messages():
-        yield message
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for real-time streaming."""
+    await websocket_manager.connect(websocket)
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception as e:
+        logging.info(f"WebSocket disconnected: {e}")
+    finally:
+        await websocket_manager.disconnect(websocket)
 
 async def async_bulk_write_to_clickhouse():
     """Async function to bulk write to ClickHouse."""
@@ -44,13 +53,7 @@ async def startup_event():
         id="clickhouse_upload",
         replace_existing=True
     )
-
     logging.info("Scheduled ClickHouse upload job every 1 minute.")
-
-@app.get("/stream")
-async def stream():
-    """SSE endpoint to stream Kafka messages"""
-    return StreamingResponse(stream_data(), media_type="text/event-stream")
 
 @app.on_event("shutdown")
 async def shutdown_event():
