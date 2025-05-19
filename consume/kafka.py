@@ -53,7 +53,7 @@ class AsyncConsumer:
                     "dt": int(str(raw_data.get("dt", 0))[:10])
                 }
 
-                key = f"weather:{weather_data['timestamp']}_{weather_data['location']}"
+                key = f"weather:{weather_data['dt']}_{weather_data['location']}"
 
                 await save_weather_data(key, weather_data)
 
