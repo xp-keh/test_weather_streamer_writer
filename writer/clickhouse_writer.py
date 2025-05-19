@@ -31,8 +31,8 @@ async def register_table_api(table_name, location, timestamp_str):
         "data_type": "weather",
         "station_id": location,
         "date": timestamp_str,
-        "lat": locations.get(location, ("unknown", "unknown"))[0],
-        "lon": locations.get(location, ("unknown", "unknown"))[1],
+        "latitude": locations.get(location, ("unknown", "unknown"))[0],
+        "longitude": locations.get(location, ("unknown", "unknown"))[1],
     }
     
     async with httpx.AsyncClient() as client:
