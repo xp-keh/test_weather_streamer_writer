@@ -78,7 +78,7 @@ async def bulk_write_to_clickhouse():
         logging.info("No new data to write to ClickHouse.")
         return
 
-    previous_hour = datetime.now() - timedelta(hours=1)
+    previous_hour = datetime.now(timezone.utc) - timedelta(hours=1)
     timestamp_str = previous_hour.strftime("%Y%m%d")
 
     total_inserted = 0
