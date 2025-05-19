@@ -4,7 +4,6 @@ import pytz
 import httpx
 from datetime import datetime, timezone, timedelta
 from config.utils import get_env_value
-# from datastore.redis_store import get_all_weather_data, clear_redis
 from datastore.redis_store import group_keys_by_location, get_weather_data_by_keys, clear_redis
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -25,7 +24,7 @@ locations = {
 }
 
 async def register_table_api(table_name, location, timestamp_str):
-    url = "http://85.209.163.202:4000/catalog/register"
+    url = "http://xp-keh:4000/catalog/register"
     data = {
         "table_name": table_name,
         "data_type": "weather",
@@ -34,6 +33,8 @@ async def register_table_api(table_name, location, timestamp_str):
         "latitude": locations.get(location, ("unknown", "unknown"))[0],
         "longitude": locations.get(location, ("unknown", "unknown"))[1],
     }
+    logging.info(f"Sending registration request to {url} with JSON payload: {data}")
+
     
     async with httpx.AsyncClient() as client:
         try:
