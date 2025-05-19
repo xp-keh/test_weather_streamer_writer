@@ -25,7 +25,7 @@ locations = {
 }
 
 async def register_table_api(table_name, location, timestamp_str):
-    url = "http://85.209.163.202:4000/catalog/register"
+    url = "https://85.209.163.202:4000/catalog/register"
     data = {
         "table_name": table_name,
         "data_type": "weather",
