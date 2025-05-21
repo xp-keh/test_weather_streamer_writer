@@ -1,6 +1,5 @@
 import logging
 import clickhouse_connect
-import pytz
 import httpx
 from datetime import datetime, timezone, timedelta
 from config.utils import get_env_value
@@ -13,7 +12,6 @@ CLICKHOUSE_DATABASE = get_env_value("CLICKHOUSE_DATABASE")
 CLICKHOUSE_USER = get_env_value("CLICKHOUSE_USER")
 CLICKHOUSE_PASSWORD = get_env_value("CLICKHOUSE_PASSWORD")
 
-gmt7 = pytz.timezone("Asia/Jakarta")
 
 locations = {
     "TNTI": ("0.7718", "127.3667"),
@@ -45,12 +43,11 @@ async def register_table_api(table_name, location, timestamp_str):
                 logging.error(f"Failed to register table for location {location}. Status: {response.status_code}")
         except Exception as e:
             logging.error(f"Exception registering table for location {location}: {e}")
-
-def format_unix_to_gmt7_string(unix_ts):
+    
+def format_unix_to_utc_string(unix_ts):
     try:
         dt_utc = datetime.utcfromtimestamp(unix_ts)
-        dt_gmt7 = dt_utc.replace(tzinfo=pytz.utc).astimezone(gmt7)
-        return dt_gmt7.strftime("%d-%m-%YT%H:%M:%S")
+        return dt_utc.strftime("%d-%m-%YT%H:%M:%S")
     except Exception:
         return ""
     
@@ -92,22 +89,20 @@ async def bulk_write_to_clickhouse():
 
         create_table_query = f"""
         CREATE TABLE IF NOT EXISTS {table_name} (
-            location String,
+            dt Int32,
+            timestamp String
             lat Float64,
             lon Float64,
+            location String,
+            description String,
             temp Float32,
             feels_like Float32,
-            temp_min Float32,
-            temp_max Float32,
             pressure Int32,
             humidity Int32,
             wind_speed Float32,
             wind_deg Int32,
             wind_gust Float32,
             clouds Int32,
-            timestamp Int32,
-            dt Int32,
-            dt_format String
         ) ENGINE = MergeTree()
         ORDER BY timestamp
         """
@@ -117,22 +112,20 @@ async def bulk_write_to_clickhouse():
 
         data_to_insert = [
             (
-                row["location"],
+                row.get("dt", 0),
+                format_unix_to_utc_string(row.get("dt", 0)),
                 safe_float(row.get("lat", 0.0)),
                 safe_float(row.get("lon", 0.0)),
+                row["location"],
+                row["description"],
                 row.get("temp", 0.0), 
                 row.get("feels_like", 0.0),
-                row.get("temp_min", 0.0),
-                row.get("temp_max", 0.0),
                 row.get("pressure", 0), 
                 row.get("humidity", 0),
                 row.get("wind_speed", 0.0),
                 row.get("wind_deg", 0),
                 row.get("wind_gust", 0.0),
                 row.get("clouds", 0),
-                row.get("timestamp", 0),
-                row.get("dt", 0),
-                format_unix_to_gmt7_string(row.get("dt", 0)),
             )
             for row in weather_data
         ]

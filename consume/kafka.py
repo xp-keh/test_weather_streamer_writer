@@ -37,6 +37,9 @@ class AsyncConsumer:
                 raw_data = message.value
 
                 weather_data = {
+                    "dt": int(str(raw_data.get("dt", 0))[:10]),
+                    "lat": raw_data.get("lat", "unknown"),
+                    "lon": raw_data.get("lon", "unknown"),
                     "location": raw_data.get("location", "unknown"),
                     "temp": raw_data.get("main", {}).get("temp", 0.0),
                     "feels_like": raw_data.get("main", {}).get("feels_like", 0.0),
@@ -47,10 +50,6 @@ class AsyncConsumer:
                     "wind_gust": raw_data.get("wind", {}).get("gust", 0.0),  
                     "clouds": raw_data.get("clouds", {}).get("all", 0),
                     "description": raw_data.get("weather", [{}])[0].get("description", "unknown"),
-                    "timestamp": int(str(raw_data.get("raw_produce_dt", 0))[:10]),
-                    "lat": raw_data.get("lat", "unknown"),
-                    "lon": raw_data.get("lon", "unknown"),
-                    "dt": int(str(raw_data.get("dt", 0))[:10])
                 }
 
                 key = f"weather:{weather_data['dt']}_{weather_data['location']}"
