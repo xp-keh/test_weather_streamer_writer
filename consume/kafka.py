@@ -37,6 +37,7 @@ class AsyncConsumer:
             async for message in self.consumer:
                 try:
                     raw_data = json.loads(message.value)
+                    self.logger.info("received")
                     
                     raw_data["streamer_consume_dt"] = int(time.time() * 1000)
 
