@@ -43,8 +43,8 @@ class AsyncConsumer:
 
                     weather_data = {
                         "dt": int(str(raw_data.get("dt", 0))[:10]),
-                        "lat": raw_data.get("coord", {}).get("lat", 0.0),
-                        "lon": raw_data.get("coord", {}).get("lon", 0.0),
+                        "lat": raw_data.get("lat", "unknown"),
+                        "lon": raw_data.get("lon", "unknown"),
                         "location": raw_data.get("location", "unknown"),
                         "temp": raw_data.get("main", {}).get("temp", 0.0),
                         "feels_like": raw_data.get("main", {}).get("feels_like", 0.0),
