@@ -1,9 +1,9 @@
 version: "3.8"
 
 services:
-  weather-streamer:
+  weather-streamer-test:
     build: .
-    container_name: weather_streamer
+    container_name: weather_streamer_test
     pull_policy: build
     environment:
       - KAFKA_BROKER=${KAFKA_BROKER}
@@ -17,24 +17,24 @@ services:
       - CLICKHOUSE_DATABASE=${CLICKHOUSE_DATABASE}
       - CLICKHOUSE_USER=${CLICKHOUSE_USER}
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD}
-    command: uvicorn main:app --host 0.0.0.0 --port 8012
+    command: uvicorn main:app --host 0.0.0.0 --port 8052
     ports:
-      - "8012:8012"
+      - "8052:8052"
     networks:
       data-station-network:
-        ipv4_address: 172.20.14.84
+        ipv4_address: 172.20.14.54
     depends_on:
-      - redis
+      - redis-test
 
-  redis:
+  redis-test:
     image: redis:alpine
-    container_name: weather_redis
+    container_name: weather_redis_test
     restart: always
     command: redis-server --save 60 1 --loglevel warning --appendonly yes
     volumes:
       - redis_data:/data
     ports:
-      - "6379:6379"
+      - "6359:6359"
     networks:
       data-station-network:
 
