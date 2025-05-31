@@ -37,7 +37,7 @@ class AsyncConsumer:
             async for message in self.consumer:
                 try:
                     raw_data = json.loads(message.value)
-                    self.logger.info("received")
+                    # self.logger.info("received")
                     
                     raw_data["streamer_consume_dt"] = int(time.time() * 1000)
 
@@ -61,7 +61,7 @@ class AsyncConsumer:
                     }
 
                     await self.websocket_manager.broadcast(json.dumps(weather_data))
-                    self.logger.info(f"Data sent to Websocket: {weather_data}")
+                    # self.logger.info(f"Data sent to Websocket: {weather_data}")
 
                 except WebSocketDisconnect:
                     self.logger.warning("WebSocket disconnected. Skipping message broadcast.")
