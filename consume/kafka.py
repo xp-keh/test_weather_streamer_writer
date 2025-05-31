@@ -94,7 +94,7 @@ class AsyncConsumer:
             bootstrap_servers=self.kafka_broker,
             group_id=self.group_id,
             auto_offset_reset="latest",
-            value_deserializer=lambda m: m,  # raw bytes
+            value_deserializer=lambda m: m,
         )
         self.websocket_manager = websocket_manager
 
