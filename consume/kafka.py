@@ -55,7 +55,7 @@ class AsyncConsumer:
                         "wind_gust": raw_data.get("wind", {}).get("gust", 0.0),  
                         "clouds": raw_data.get("clouds", {}).get("all", 0),
                         "description": raw_data.get("weather", [{}])[0].get("description", "unknown"),
-                        "source_dt": raw_data.get("dt"), 
+                        "source_dt": raw_data.get("source_dt"), 
                         "streamer_consume_dt": raw_data["streamer_consume_dt"],
                         "streamer_produce_dt": int(time.time() * 1000),
                     }
