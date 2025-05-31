@@ -61,7 +61,7 @@ class AsyncConsumer:
                     }
 
                     await self.websocket_manager.broadcast(json.dumps(weather_data))
-                    # self.logger.info(f"Data sent to Websocket: {weather_data}")
+                    self.logger.info(f"Data sent to Websocket: {weather_data}")
 
                 except WebSocketDisconnect:
                     self.logger.warning("WebSocket disconnected. Skipping message broadcast.")
