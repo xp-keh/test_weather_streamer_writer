@@ -26,7 +26,7 @@ services:
     depends_on:
       - redis-test
 
-  redis-test:
+  redis:
     image: redis:alpine
     container_name: weather_redis_test
     restart: always
