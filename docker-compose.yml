@@ -30,7 +30,7 @@ services:
     image: redis:alpine
     container_name: weather_redis_test
     restart: always
-    command: redis-server --save 60 1 --loglevel warning --appendonly yes
+    command: redis-server --port 6359 --save 60 1 --loglevel warning --appendonly yes
     volumes:
       - redis_data:/data
     ports:
