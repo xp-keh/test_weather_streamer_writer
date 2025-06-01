@@ -87,9 +87,12 @@ async def test_batch_upload(n: int = Query(..., ge=1, le=10000)):
     total_bytes = len(json_data.encode("utf-8")) * n
     byte_size_per_data = len(json_data.encode("utf-8"))
 
+    tasks = []
     for i in range(n):
         key = f"weather:{dummy_data['dt']}_{i}"
-        await save_weather_data(key, dummy_data)
+        tasks.append(save_weather_data(key, dummy_data))
+
+    await asyncio.gather(*tasks)
 
     start_time = time.time()
 

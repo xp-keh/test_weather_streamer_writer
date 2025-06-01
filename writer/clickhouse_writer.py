@@ -37,10 +37,10 @@ async def register_table_api(table_name, location, timestamp_str):
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(url, json=data)
-            if response.status_code in (200, 201):
-                logging.info(f"Registered table for {table_name} successfully")
-            else:
-                logging.error(f"Failed to register table for location {location}. Status: {response.status_code}")
+            # if response.status_code in (200, 201):
+            #     logging.info(f"Registered table for {table_name} successfully")
+            # else:
+            #     logging.error(f"Failed to register table for location {location}. Status: {response.status_code}")
         except Exception as e:
             logging.error(f"Exception registering table for location {location}: {e}")
     
