@@ -58,7 +58,7 @@ async def produce_to_websocket(count: int = Query(..., ge=1, le=10000)):
     return {"status": f"Produced {count} dummy messages to websocket"}
 
 @app.post("/test-batch-upload")
-async def test_batch_upload(n: int = Query(..., ge=1, le=10000)):
+async def test_batch_upload(n: int = Query(..., ge=1, le=100000)):
     """
     Melakukan batch test:
     1. Memasukkan n dummy data ke Redis
@@ -84,7 +84,6 @@ async def test_batch_upload(n: int = Query(..., ge=1, le=10000)):
         'description': 'light rain'
     }
     json_data = json.dumps(dummy_data)
-    total_bytes = len(json_data.encode("utf-8")) * n
     byte_size_per_data = len(json_data.encode("utf-8"))
 
     tasks = []
@@ -94,7 +93,7 @@ async def test_batch_upload(n: int = Query(..., ge=1, le=10000)):
 
     await asyncio.gather(*tasks)
 
-    logging.info(f"[Batch Upload] Completed writing {n} entries to Redis")
+    # logging.info(f"[Batch Upload] Completed writing {n} entries to Redis")
 
     start_time = time.time()
 
