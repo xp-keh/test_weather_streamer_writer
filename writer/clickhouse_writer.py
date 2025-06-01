@@ -31,18 +31,18 @@ async def register_table_api(table_name, location, timestamp_str):
         "latitude": locations.get(location, ("unknown", "unknown"))[0],
         "longitude": locations.get(location, ("unknown", "unknown"))[1],
     }
-    logging.info(f"Sending registration request to {url} with JSON payload: {data}")
+    # logging.info(f"Sending registration request to {url} with JSON payload: {data}")
 
     
     async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, json=data)
+        # try:
+        response = await client.post(url, json=data)
             # if response.status_code in (200, 201):
             #     logging.info(f"Registered table for {table_name} successfully")
             # else:
             #     logging.error(f"Failed to register table for location {location}. Status: {response.status_code}")
-        except Exception as e:
-            logging.error(f"Exception registering table for location {location}: {e}")
+        # except Exception as e:
+            # logging.error(f"Exception registering table for location {location}: {e}")
     
 def format_unix_to_utc_string(unix_ts):
     try:

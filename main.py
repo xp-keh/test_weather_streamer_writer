@@ -94,6 +94,8 @@ async def test_batch_upload(n: int = Query(..., ge=1, le=10000)):
 
     await asyncio.gather(*tasks)
 
+    logging.info(f"[Batch Upload] Completed writing {n} entries to Redis")
+
     start_time = time.time()
 
     await bulk_write_to_clickhouse()
