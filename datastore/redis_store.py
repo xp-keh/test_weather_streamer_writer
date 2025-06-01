@@ -33,7 +33,7 @@ async def get_all_weather_data():
     else: 
         keys = await redis_client.keys("weather:*")
         data = [json.loads(await redis_client.get(key)) for key in keys]
-        logging.info(f"Fetched {len(data)} records from Redis.")
+        logging.info(f"[Batch Upload] Fetched {len(data)} records from Redis.")
         return data
 
 async def clear_redis():
@@ -42,7 +42,7 @@ async def clear_redis():
     
     try:
         await redis_client.flushdb() # type: ignore
-        logging.info("✅ Redis flush successful.")
+        # logging.info("✅ Redis flush successful.")
     except Exception as e:
         logging.error(f"❌ Redis flush failed: {e}")
 

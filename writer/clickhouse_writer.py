@@ -131,13 +131,13 @@ async def bulk_write_to_clickhouse():
     ]
 
     clickhouse_client.insert(table_name, data_to_insert)
-    logging.info(f"Uploaded {len(data_to_insert)} records to table {table_name}.")
+    logging.info(f"[Batch Upload] Uploaded {len(data_to_insert)} records to table {table_name}.")
 
     total_inserted += len(data_to_insert)
 
     if total_inserted > 0:
         await clear_redis()
-        logging.info(f"Uploaded a total of {total_inserted} records to ClickHouse and cleared Redis.")
+        # logging.info(f"Uploaded a total of {total_inserted} records to ClickHouse and cleared Redis.")
     else:
         logging.info("No data was uploaded to ClickHouse.")
 
