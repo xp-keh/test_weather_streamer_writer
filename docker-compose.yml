@@ -24,7 +24,7 @@ services:
       data-station-network:
         ipv4_address: 172.20.14.54
     depends_on:
-      - redis-test
+      - redis
 
   redis:
     image: redis:alpine
