@@ -93,7 +93,7 @@ async def test_batch_upload(n: int = Query(..., ge=1, le=100000)):
 
     await asyncio.gather(*tasks)
 
-    # logging.info(f"[Batch Upload] Completed writing {n} entries to Redis")
+    logging.info(f"[Batch Upload] Completed writing {n} entries to Redis, starting batch upload process...")
 
     start_time = time.time()
 
